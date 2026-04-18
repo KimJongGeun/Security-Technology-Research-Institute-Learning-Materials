@@ -6,8 +6,9 @@
 
 ### 웹 공격 기초 시리즈
 - [01. HTTP 요청 해부 — WAF가 보는 시점](docs/web-attack/01_http_request_anatomy.md)
-- [02. OWASP Top 10 × WAF 커버리지 매트릭스](docs/web-attack/02_owasp_top10.md)
+- [02. OWASP Top 10:2025 × WAF 커버리지 매트릭스](docs/web-attack/02_owasp_top10.md)
 - [03. WAF 기초 — 동작 원리와 룰 설계](docs/web-attack/03_waf_basics.md)
+- [04. SQL Injection — 패턴, 우회, WAF 대응](docs/web-attack/04_sql_injection.md)
 
 이후 챕터는 순차적으로 추가 예정.
 

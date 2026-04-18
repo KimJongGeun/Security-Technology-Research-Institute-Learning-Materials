@@ -12,6 +12,10 @@
 - [05. Cross-Site Scripting (XSS) — 컨텍스트·우회·CSP 조합](docs/web-attack/05_xss.md)
 - [06. Command Injection & SSRF — RCE와 내부 접근의 최단 경로](docs/web-attack/06_command_injection_ssrf.md)
 - [07. Path Traversal & File Inclusion — 경로 정규화 우회](docs/web-attack/07_path_traversal_lfi.md)
+- [이후 작업 로드맵](docs/web-attack/ROADMAP.md)
+
+### AI 보안 시리즈
+- [01. 공격 AI 지형도 — Claude Mythos 이후](docs/ai-security/01_offensive_ai_landscape.md)
 
 이후 챕터는 순차적으로 추가 예정.
 

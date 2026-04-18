@@ -9,6 +9,9 @@
 - [02. OWASP Top 10:2025 × WAF 커버리지 매트릭스](docs/web-attack/02_owasp_top10.md)
 - [03. WAF 기초 — 동작 원리와 룰 설계](docs/web-attack/03_waf_basics.md)
 - [04. SQL Injection — 패턴, 우회, WAF 대응](docs/web-attack/04_sql_injection.md)
+- [05. Cross-Site Scripting (XSS) — 컨텍스트·우회·CSP 조합](docs/web-attack/05_xss.md)
+- [06. Command Injection & SSRF — RCE와 내부 접근의 최단 경로](docs/web-attack/06_command_injection_ssrf.md)
+- [07. Path Traversal & File Inclusion — 경로 정규화 우회](docs/web-attack/07_path_traversal_lfi.md)
 
 이후 챕터는 순차적으로 추가 예정.
 

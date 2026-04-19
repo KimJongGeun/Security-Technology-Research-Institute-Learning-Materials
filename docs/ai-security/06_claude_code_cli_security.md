@@ -103,26 +103,45 @@ CLAUDE.md              # 로컬 전용 컨텍스트 파일 (팀 공유용은 별
 
 ---
 
-## 2. 설정 파일 3계층 — 우선순위와 통제 포인트
+## 2. 설정 파일 계층 — 우선순위와 통제 포인트
 
 ### 2.1 계층 구조
 
+Claude Code 공식 문서는 설정 스코프를 4개(Managed / User / Project / Local)로 정의한다. 적용 우선순위는 다음과 같다 (위가 더 강함).
+
 ```mermaid
 flowchart TB
-    A[Enterprise managed-settings.json<br/>MDM 강제 배포] --> B[User ~/.claude/settings.json<br/>본인이 바꿀 수 있음]
-    B --> C[Project .claude/settings.json<br/>팀 공유, 레포 커밋 대상]
-    C --> D[Project-local .claude/settings.local.json<br/>개인 override, gitignore 대상]
-    D --> E[CLI 옵션·환경변수<br/>최고 우선]
+    M[Managed tier<br/>관리자 강제 배포 — 사용자가 못 뒤집음]
+    CLI[CLI 옵션·환경변수<br/>세션 한정 override]
+    P[Project .claude/settings.json<br/>팀 공유, 레포 커밋 대상]
+    L[Project-local .claude/settings.local.json<br/>개인 override, gitignore]
+    U[User ~/.claude/settings.json<br/>본인, 모든 프로젝트 공통]
 
-    style A fill:#e0e0ff
-    style E fill:#ffe0e0
+    M --> CLI --> P --> L --> U
+
+    style M fill:#e0e0ff
+    style U fill:#ffe0e0
 ```
 
-**핵심 원칙:**
-- **Enterprise 관리 설정**(MDM으로 배포)은 **사용자가 바꿀 수 없다** — 사내 표준 DLP·금지 명령을 여기에 박는다
-- **프로젝트 settings.json**은 팀 전체에 공유 — 프로젝트별 훅·허용 도구를 정의
-- **settings.local.json**은 개인 예외 — 반드시 `.gitignore`
-- CLI 옵션과 환경변수가 최종 우선권 — 스크립트 자동화 시 오버라이드 가능
+Managed 티어 안에서는 공식 문서 기준으로 다시 **3단계 서브 우선순위**가 있다.
+
+```mermaid
+flowchart LR
+    S[Server-managed settings<br/>Claude.ai 관리자 콘솔에서 배포]
+    M[MDM / OS-level policy<br/>macOS plist · Windows registry]
+    F[File-based managed-settings<br/>managed-settings.d/*.json + managed-settings.json]
+
+    S -->|우선| M -->|우선| F
+
+    style S fill:#c8e6c9
+```
+
+**핵심 원칙 (공식 문서 기준):**
+- Managed 티어는 **CLI 옵션·환경변수로도 오버라이드 불가** — 가장 강한 통제 지점
+- Managed 티어 내부에서는 **병합되지 않고 소스 하나만 선택**된다 — server-managed가 비어있지 않으면 endpoint-managed는 완전히 무시
+- File-based 안에서는 `managed-settings.d/` 드롭인과 `managed-settings.json`이 병합됨
+- 프로젝트 `settings.json`은 팀 전체 공유 — 프로젝트별 훅·허용 도구를 정의
+- `settings.local.json`은 개인 예외 — 반드시 `.gitignore`
 
 ### 2.2 settings.json 주요 필드 (보안 관점)
 
@@ -163,21 +182,89 @@ flowchart TB
 }
 ```
 
-### 2.3 Enterprise managed-settings.json
+### 2.3 Enterprise 관리 설정 — 3가지 배포 방식
 
-Anthropic은 MDM을 통한 **강제 설정 배포**를 공식 지원한다.
+Managed 티어는 아래 3가지 방식 중 하나로 구현한다. 같은 조직에서 병행 설치되어 있으면 우선순위는 **Server-managed > MDM/OS-level > File-based** 순이다 (공식 문서 기준).
 
-배포 경로 (플랫폼별, 공식 문서 기준):
+#### (1) Server-managed settings (Claude.ai 관리자 콘솔)
+
+Claude.ai 콘솔에서 JSON 정책을 직접 입력·배포하는 방식. MDM 인프라 없이 전사 배포가 가능해 **BYOD·무관리 디바이스 환경에 최적**이다.
+
+- **지원 플랜**: Claude for Teams, Claude for Enterprise (공식 문서 명시)
+- **최소 버전**: Claude Code 2.1.38+ (Teams), 2.1.30+ (Enterprise)
+- **접근 경로**: Claude.ai → Admin Settings → Claude Code → Managed settings
+- **관리 역할**: Primary Owner, Owner 만 수정 가능
+- **전송 시점**: 사용자 인증 시 + 활성 세션 중 **1시간마다 폴링**
+- **캐시**: 로컬 캐시로 네트워크 장애 시에도 이전 설정 유지
+- **지원 키**: `settings.json`의 모든 키 + 훅 + 환경변수 + `allowManagedPermissionRulesOnly` 같은 managed-only 키
+- **MCP 제한**: [MCP 서버 configuration은 server-managed로 배포 불가](https://code.claude.com/docs/en/server-managed-settings#current-limitations) (파일 방식 필요)
+- **사용자 승인 다이얼로그**: 훅·shell 명령·커스텀 환경변수가 포함되면 최초 적용 시 사용자가 승인 다이얼로그를 봐야 함 (비대화형 `-p` 모드는 스킵)
+- **제3자 공급자 호환성**: Bedrock / Vertex AI / Foundry / `ANTHROPIC_BASE_URL` 커스텀 게이트웨이 사용 시 **server-managed 설정이 우회됨** — 이 경우 endpoint-managed 방식 필수
+- **현재 한계** (공식 명시):
+  - 사용자 그룹별 분기 배포 미지원 (전 조직 단일 설정)
+  - MCP 서버 배포 미지원
+
+**Fail-closed 강제**: 콘솔이 내려준 설정에 `forceRemoteSettingsRefresh: true`를 포함하면 매 시작 시 원격 fetch가 성공해야만 CLI가 기동한다. 실패 시 CLI가 종료 — 강한 컴플라이언스 요구 환경에서 사용. `api.anthropic.com` 네트워크 차단 시 사용자 전원이 CLI를 켤 수 없게 된다는 점은 주의.
+
+예시 정책 (공식 문서 샘플):
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(curl *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "allowManagedPermissionRulesOnly": true
+}
+```
+
+#### (2) MDM / OS-level 정책 (Endpoint-managed)
+
+OS 네이티브 관리 채널로 정책을 배포. MDM에 이미 등록된 디바이스라면 **가장 강한 보증**을 제공한다 (파일을 사용자가 수정 불가 수준으로 보호).
+
+- **macOS**: `com.anthropic.claudecode` managed preferences 도메인 → Jamf / Kandji(Iru) 등 MDM configuration profile
+- **Windows**: `HKLM\SOFTWARE\Policies\ClaudeCode` 레지스트리의 `Settings` 값 (REG_SZ / REG_EXPAND_SZ, JSON 문자열) → Group Policy / Intune
+
+#### (3) File-based managed-settings (로컬 파일)
+
+위 두 방식을 못 쓰는 환경에서의 폴백. 단일 JSON 파일 또는 `managed-settings.d/` 드롭인 디렉터리(알파벳순 병합) 지원.
+
+배포 경로 (공식 문서 기준):
 - macOS: `/Library/Application Support/ClaudeCode/managed-settings.json`
-  - MDM 경로는 `com.anthropic.claudecode` managed preferences 도메인 (Jamf·Kandji 등)
 - Linux / WSL: `/etc/claude-code/managed-settings.json`
 - Windows: `C:\Program Files\ClaudeCode\managed-settings.json`
-  - 레지스트리 경로는 `HKLM\SOFTWARE\Policies\ClaudeCode`의 `Settings` 값 (GPO·Intune)
-  - ※ 구 경로 `C:\ProgramData\ClaudeCode\managed-settings.json`는 v2.1.75 이후 지원 중단, 마이그레이션 필요
+  - ※ 구 경로 `C:\ProgramData\ClaudeCode\managed-settings.json`는 v2.1.75 이후 지원 중단 — 마이그레이션 필요
 
-같은 디렉터리에 `managed-settings.d/` 드롭인 디렉터리를 두고 정책 파편을 분할 배포할 수도 있다(알파벳 순 병합). 또한 Anthropic은 콘솔 서버에서 내려주는 **server-managed settings**도 별도로 제공한다.
+#### 세 방식의 선택 가이드
 
-이 파일에 `permissions.deny`, 훅, 환경변수를 박으면 **사용자가 개인 settings.json에서 이를 풀 수 없다**.
+| 조건 | 권장 방식 |
+|---|---|
+| MDM 미도입 / BYOD / 재택 개발자 | Server-managed (관리자 콘솔) |
+| MDM 이미 운영 중 | MDM / OS-level policy (무결성 보장 강함) |
+| 폐쇄망·온프레미스·MDM 없음 | File-based + 운영 자동화 스크립트 |
+| 컴플라이언스 감사 요구 | Server-managed + `forceRemoteSettingsRefresh` + audit log export |
+
+이 3가지 모두에 `permissions.deny`, 훅, 환경변수를 박으면 **사용자가 개인 settings.json에서 이를 풀 수 없다**.
+
+#### 감사 로그
+
+Server-managed settings 변경 이력은 Anthropic **compliance API 또는 audit log export**로 제공된다 (Anthropic account team 연락 필요). 이벤트에는 작업 유형, 수행 계정·디바이스, 변경 전/후 값 참조가 포함된다.
+
+#### 클라이언트측 제어로서의 한계 (공식 문서 명시)
+
+| 시나리오 | 동작 |
+|---|---|
+| 사용자가 캐시 파일 편집 | 변조본은 다음 fetch까지만 유효, 이후 서버 설정으로 복원 |
+| 사용자가 캐시 파일 삭제 | 첫 기동 동작으로 되돌아감 — 잠깐 비강제 구간 생김 |
+| API 불가 상태 | 캐시 적용, 없으면 비강제. `forceRemoteSettingsRefresh`면 CLI 종료 |
+| 다른 조직 계정으로 인증 | 관리 설정이 전달되지 않음 |
+| 비표준 `ANTHROPIC_BASE_URL` 사용 | Server-managed 우회됨 |
+
+런타임 설정 변경을 탐지하려면 `ConfigChange` 훅을 병행. 강한 보증이 필요하면 **MDM 기반 endpoint-managed 설정**을 사용해야 한다 (파일 보호 수준이 다름).
 
 **사내 권장 최소 강제안:**
 ```jsonc
@@ -524,14 +611,28 @@ chmod +x ~/.claude/hooks/block-danger.sh
 - `curl` 은 즉시 거부 (프롬프트 조차 안 뜸)
 - `Read(/etc/passwd)` 는 ask 경로로 빠짐 — 사용자가 선택
 
-### 실습 5 — Managed Settings로 deny 강제
+### 실습 5 — Managed Settings로 deny 강제 (두 경로)
+
+**경로 A: 로컬 파일 기반 (File-based managed-settings)**
 
 `/Library/Application Support/ClaudeCode/managed-settings.json` (macOS)에:
 ```json
 { "permissions": { "deny": ["Bash(curl *)"] } }
 ```
 
-이후 사용자 settings.json에서 `allow: ["Bash(curl *)"]`을 넣어봐도 **관리 설정이 우선**이므로 차단. (이게 실제 사내 강제 방식의 핵심.)
+이후 사용자 settings.json에서 `allow: ["Bash(curl *)"]`을 넣어봐도 **관리 설정이 우선**이므로 차단.
+
+**경로 B: Server-managed settings (Claude.ai 관리자 콘솔)**
+
+Teams / Enterprise 플랜이라면 Claude.ai → Admin Settings → Claude Code → Managed settings 에서 **같은 JSON을 콘솔에 직접 입력**. 저장 후 사용자 CLI를 재시작하면 다음 기동 시 (또는 활성 세션 1시간 폴링 주기 안에) 자동으로 전파된다.
+
+```bash
+# 클라이언트에서 어느 관리 소스가 적용 중인지 확인
+claude
+> /status
+```
+
+> **참고**: 같은 조직에 경로 A와 경로 B가 동시에 있으면 **B (server-managed) 가 우선**하고 A는 완전히 무시된다. 콘솔에서 설정을 지워 A로 폴백시키려면 **캐시가 만료될 때까지** 기존 B가 유지되는 점에 주의.
 
 ### 실습 과제
 
@@ -551,6 +652,9 @@ chmod +x ~/.claude/hooks/block-danger.sh
 - [ ] 사내 게이트웨이 URL 강제 (`ANTHROPIC_BASE_URL`)
 - [ ] `.claude/`·`CLAUDE.md` gitignore 표준안 배포
 - [ ] 기본 모델 강제 (`model` 필드를 managed-settings에)
+- [ ] 배포 방식 결정 — Server-managed (Teams/Enterprise, MDM 불필요) vs MDM/OS-level vs File-based
+- [ ] Server-managed 사용 시: Admin Settings 접근 권한을 Primary Owner·Owner로만 제한
+- [ ] Server-managed 사용 시: `api.anthropic.com` 화이트리스트 확인 (`forceRemoteSettingsRefresh` 도입 검토 포함)
 
 ### 운영 초기 (Day 7-30)
 
@@ -565,6 +669,8 @@ chmod +x ~/.claude/hooks/block-danger.sh
 - [ ] 세션 단위 메트릭 집계 (사용자·모델·툴 호출수·차단수)
 - [ ] 서브에이전트·MCP 도구 호출에 별도 메트릭
 - [ ] 월 1회 훅 스크립트·managed-settings 무결성 점검
+- [ ] Server-managed 변경 이력을 compliance API / audit log export로 정기 수집
+- [ ] `ConfigChange` 훅으로 런타임 설정 변조 모니터링
 - [ ] 플랜 업그레이드 검토 (Team → Enterprise: Audit Log API 확보)
 
 ---
@@ -579,7 +685,8 @@ chmod +x ~/.claude/hooks/block-danger.sh
 
 - Claude Code 공식 문서 — https://docs.claude.com/en/docs/claude-code/overview
 - Hooks — https://docs.claude.com/en/docs/claude-code/hooks
-- Settings — https://docs.claude.com/en/docs/claude-code/settings
+- Settings — https://code.claude.com/docs/en/settings
+- Server-managed settings (Admin 콘솔 배포) — https://code.claude.com/docs/en/server-managed-settings
 - Enterprise managed settings — https://docs.claude.com/en/docs/claude-code/enterprise
 - MCP 사양 — https://modelcontextprotocol.io
 - Anthropic Admin API — https://docs.claude.com/en/api/administration-api

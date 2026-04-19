@@ -21,6 +21,8 @@
 - [03. 프런티어 모델 시대의 방어 전략 — 속도 전쟁을 가정한 설계](docs/ai-security/03_mythos_ready_defense.md)
 - [04. OWASP LLM Top 10:2025 방어 레시피 — 항목별 구현 가이드](docs/ai-security/04_llm_top10_defense_recipes.md)
 - [05. 에이전트 보안 실전 플레이북 — MCP·툴 호출·샌드박스](docs/ai-security/05_agent_security_playbook.md)
+- [06. Claude Code CLI 보안 — 설정·훅·권한·MCP·실습](docs/ai-security/06_claude_code_cli_security.md)
+- [07. 실전 종합 랩 — Claude Code 보안 모니터링 구축](docs/ai-security/07_integrated_labs.md)
 
 이후 챕터는 순차적으로 추가 예정.
 
@@ -33,7 +35,7 @@
 
 ## 사용법
 
-각 문서는 단독으로 읽을 수 있도록 작성되어 있다. 웹 공격 시리즈는 HTTP 요청 구조 → 공격 분류 → WAF 룰 설계 순으로, AI 보안 시리즈는 공격 지형도 → 공격 유형 → 방어 전략 → 항목별 레시피 → 에이전트 실전 순으로 읽으면 흐름을 따라갈 수 있다.
+각 문서는 단독으로 읽을 수 있도록 작성되어 있다. 웹 공격 시리즈는 HTTP 요청 구조 → 공격 분류 → WAF 룰 설계 순으로, AI 보안 시리즈는 LLM 기본기 → 공격 지형도 → 공격 유형 → 방어 전략 → 항목별 레시피 → 에이전트 실전 → CLI 보안 → 종합 랩 순으로 읽으면 흐름을 따라갈 수 있다.
 
 ## 라이선스
 

@@ -1,6 +1,6 @@
 # Security Technology Research Institute — Learning Materials
 
-웹 공격·WAF 운영·보안 탐지에 관한 개인 학습 자료 모음. Cloudflare WAF 운영 관점에서 정리한다.
+웹 공격·WAF 운영·AI 보안·보안 탐지에 관한 개인 학습 자료 모음. 실무 운영 관점에서 정리한다.
 
 ## 목차
 
@@ -16,6 +16,10 @@
 
 ### AI 보안 시리즈
 - [01. 공격 AI 지형도 — Claude Mythos 이후](docs/ai-security/01_offensive_ai_landscape.md)
+- [02. AI 기반 공격 유형 정리 — 실제 사고 중심 분류](docs/ai-security/02_ai_attack_taxonomy.md)
+- [03. 프런티어 모델 시대의 방어 전략 — 속도 전쟁을 가정한 설계](docs/ai-security/03_mythos_ready_defense.md)
+- [04. OWASP LLM Top 10:2025 방어 레시피 — 항목별 구현 가이드](docs/ai-security/04_llm_top10_defense_recipes.md)
+- [05. 에이전트 보안 실전 플레이북 — MCP·툴 호출·샌드박스](docs/ai-security/05_agent_security_playbook.md)
 
 이후 챕터는 순차적으로 추가 예정.
 
@@ -30,11 +34,12 @@
 
 - WAF·SIEM을 운영하는 보안 담당자
 - 웹 공격 탐지·대응 로직을 직접 설계해야 하는 엔지니어
-- OWASP Top 10 수준의 이해를 넘어 룰 한 줄을 직접 작성하고 싶은 사람
+- AI/LLM 서비스 도입 시 보안 통제를 설계해야 하는 엔지니어
+- OWASP Top 10 / LLM Top 10 수준의 이해를 넘어 실전 룰·정책을 직접 작성하고 싶은 사람
 
 ## 사용법
 
-각 문서는 단독으로 읽을 수 있도록 작성되어 있다. 순서대로 읽으면 HTTP 요청 구조 → 공격 분류 → WAF 룰 설계 흐름을 따라갈 수 있다.
+각 문서는 단독으로 읽을 수 있도록 작성되어 있다. 웹 공격 시리즈는 HTTP 요청 구조 → 공격 분류 → WAF 룰 설계 순으로, AI 보안 시리즈는 공격 지형도 → 공격 유형 → 방어 전략 → 항목별 레시피 → 에이전트 실전 순으로 읽으면 흐름을 따라갈 수 있다.
 
 ## 라이선스
 

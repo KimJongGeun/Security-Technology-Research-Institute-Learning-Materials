@@ -15,6 +15,7 @@
 - [이후 작업 로드맵](docs/web-attack/ROADMAP.md)
 
 ### AI 보안 시리즈
+- [00. AI 보안 담당자를 위한 LLM 기본기 — 용어·모델·API·실습](docs/ai-security/00_llm_fundamentals_for_security.md)
 - [01. 공격 AI 지형도 — Claude Mythos 이후](docs/ai-security/01_offensive_ai_landscape.md)
 - [02. AI 기반 공격 유형 정리 — 실제 사고 중심 분류](docs/ai-security/02_ai_attack_taxonomy.md)
 - [03. 프런티어 모델 시대의 방어 전략 — 속도 전쟁을 가정한 설계](docs/ai-security/03_mythos_ready_defense.md)
